@@ -24,13 +24,16 @@ def add_order(user_id: int, items: list):
 
     try:
         start_time = time.time()
-        # TODO: optimiser
+        # Obtenir tous les produits de la base de donnees
+        product_ids_unique = list(set(product_ids))
+        products = session.query(Product).filter(Product.id.in_(product_ids_unique)).all()
+        # Initier la liste des prix
         product_prices = {}
-        for product_id in product_ids:
-            products = session.query(Product).filter(Product.id == product_id).all()
-            if not len(products):
-                raise ValueError(f"Product ID {product_id} not found in database.")
-            product_prices[product_id] = products[0].price
+        
+        # Iterer dans les produits et non dans les ids
+        for product in products:
+            product_prices[product.id] = product.price
+            
         total_amount = 0
         order_items = []
         

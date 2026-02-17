@@ -49,6 +49,45 @@ La question formulée bizarrement. Le taux d'échec varie dans le temps. La capt
 
 Les méthodes POST indiquent une erreur concernant l'accessibilité du serveur qui est saturé. "Too many connections" indique qu'il est impossible pour le serveur de traiter toutes les demandes en même temps. Les erreurs des GET découle du crash "Internal Server Error".
 
+**Question 4 : Sur l'onglet Statistics, comparez les résultats actuels avec les résultats du test de charge précédent. Est-ce que vous voyez quelques différences dans les métriques pour l'endpoint POST /orders ?**
 
+Code a priori a priori à l'intervention.:
+```
+    try:
+        start_time = time.time()
+        # TODO: optimiser
+        product_prices = {}
+        for product_id in product_ids:
+            products = session.query(Product).filter(Product.id == product_id).all()
+            if not len(products):
+                raise ValueError(f"Product ID {product_id} not found in database.")
+            product_prices[product_id] = products[0].price
+        total_amount = 0
+        order_items = []
+```
+
+Code suite à l'intervention: 
+```
+    try:
+        start_time = time.time()
+        # Obtenir tous les produits de la base de donnees
+        products = session.query(Product).filter(Product.id.in_(product_ids)).all()
+        # Initier la liste des prix
+        product_prices = {}
+        
+        # Iterer dans les produits et non dans les ids
+        for product in products:
+            product_prices[product.id] = product.price
+            
+        total_amount = 0
+        order_items = []
+```
+Comme vous pouvez le constater l'appel à la base de données est sortie de la boucle. Les prix sont appellés à partir de la liste créée tel que demandé dans l'énoncé de laboratoire. Le code suite à l'intervention à même été validé par le chargé de laboratoire (Achref Samoud). Toutefois les courbes ne changent pas:   
+
+![alt text](image-3.png)
+
+Une erreur à l'extérieur de ce qui est demandé pour cette étape empêche la démonstration de la compréhension par les chiffres attendus. Toutefois, les chiffres n'y sont pas, mais la compréhension l'est. 
+
+**Question 5 : Si nous avions plus d'articles dans notre base de données (par exemple, 1 million), ou simplement plus d'articles par commande en moyenne, le temps de réponse de l'endpoint POST /orders augmenterait-il, diminuerait-il ou resterait-il identique ?**
 
 # ANNEXE
