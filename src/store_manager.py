@@ -5,6 +5,7 @@ Auteurs : Gabriel C. Ullmann, Fabio Petrillo, 2025
 """
 import threading
 from graphene import Schema
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 from stocks.schemas.query import Query
 from flask import Flask, request, jsonify
 from orders.controllers.order_controller import create_order, remove_order, get_order, get_report_highest_spending_users, get_report_best_selling_products
@@ -13,6 +14,9 @@ from stocks.controllers.product_controller import create_product, remove_product
 from stocks.controllers.stock_controller import get_stock, set_stock, get_stock_overview
  
 app = Flask(__name__)
+counter_orders = Counter('orders', 'Total calls to /orders') 
+counter_highest_spenders = Counter('orders_highest_spenders', 'Total calls to /orders/reports/highest-spenders') 
+counter_orders_best_sellers = Counter('orders_best_sellers', 'Total calls to /orders/reports/best-sellers') 
 
 @app.get('/health-check')
 def health():
@@ -23,6 +27,7 @@ def health():
 @app.post('/orders')
 def post_orders():
     """Create a new order based on information on request body"""
+    counter_orders.inc() # Added to the counter
     return create_order(request)
 
 @app.delete('/orders/<int:order_id>')
@@ -80,12 +85,14 @@ def get_stocks(product_id):
 def get_orders_highest_spending_users():
     """Get list of highest speding users, ordered by total expenditure"""
     rows = get_report_highest_spending_users()
+    counter_highest_spenders.inc() # Added new counter
     return jsonify(rows)
 
 @app.get('/orders/reports/best-sellers')
 def get_orders_report_best_selling_products():
     """Get list of best selling products, ordered by number of orders"""
     rows = get_report_best_selling_products()
+    counter_orders_best_sellers.inc() # Added new counter
     return jsonify(rows)
 
 @app.get('/stocks/reports/overview-stocks')
@@ -106,6 +113,9 @@ def graphql_supplier():
     })
 
 # TODO: endpoint /metrics Prometheus
+@app.route("/metrics")
+def metrics():
+    return generate_latest(), 200, {"Content-Type": CONTENT_TYPE_LATEST}
 
 # Start Flask app
 if __name__ == '__main__':
